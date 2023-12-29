@@ -24,7 +24,7 @@ public class DbStatStorage {
             throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
         }
 
-        if (uris.isEmpty()) {
+        if (uris == null) {
             if (unique) {
                 return statRepository.getStatByUniqueTrue(start, end);
             } else {
