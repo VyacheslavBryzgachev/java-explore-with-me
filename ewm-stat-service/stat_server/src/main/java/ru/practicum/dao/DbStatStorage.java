@@ -20,10 +20,6 @@ public class DbStatStorage {
     }
 
     public List<StatDtoStatResponse> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
-        if (start.isAfter(end)) {
-            throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
-        }
-
         if (uris == null) {
             if (unique) {
                 return statRepository.getStatByUniqueTrue(start, end);

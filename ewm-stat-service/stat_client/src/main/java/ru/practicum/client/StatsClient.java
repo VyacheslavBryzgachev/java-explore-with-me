@@ -34,6 +34,9 @@ public class StatsClient extends BaseClient {
     }
 
     public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, @Nullable List<String> uris, boolean unique) {
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Дата начала не может быть позже даты окончания");
+        }
         Map<String, Object> parameters;
         if (uris == null) {
             parameters = Map.of("start", start,
@@ -42,9 +45,9 @@ public class StatsClient extends BaseClient {
             return get("/stats?start={start}&end={end}&unique={unique}", parameters);
         }
         parameters = Map.of("start", start,
-                    "end", end,
-                    "uris", String.join(",", uris),
-                    "unique", unique);
+                "end", end,
+                "uris", String.join(",", uris),
+                "unique", unique);
         return get("/stats?start={start}&end={end}&unique={unique}&uris={uris}", parameters);
     }
 

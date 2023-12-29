@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.dto.StatDtoHitResponse;
 import ru.practicum.dto.StatDtoRequest;
-import ru.practicum.mapper.StatMapper;
 import ru.practicum.service.StatService;
 
 @RestController
@@ -15,10 +14,9 @@ import ru.practicum.service.StatService;
 @RequestMapping(path = "/hit")
 public class HitController {
     private final StatService statService;
-    private final StatMapper statMapper = new StatMapper();
 
     @PostMapping
     public StatDtoHitResponse createHit(@RequestBody StatDtoRequest statsDto) {
-        return statMapper.toStatDtoHitResponse(statService.create(statsDto));
+        return statService.create(statsDto);
     }
 }

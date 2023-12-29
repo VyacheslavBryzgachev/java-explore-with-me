@@ -3,6 +3,7 @@ package ru.practicum.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.dao.DbStatStorage;
+import ru.practicum.dto.StatDtoHitResponse;
 import ru.practicum.dto.StatDtoRequest;
 import ru.practicum.dto.StatDtoStatResponse;
 import ru.practicum.mapper.StatMapper;
@@ -19,8 +20,9 @@ public class StatServiceImpl implements StatService {
     private final StatMapper statMapper = new StatMapper();
 
     @Override
-    public Stat create(StatDtoRequest statDtoRequest) {
-        return dbStatStorage.createStat(statMapper.toStat(statDtoRequest));
+    public StatDtoHitResponse create(StatDtoRequest statDtoRequest) {
+        Stat stat = statMapper.toStat(statDtoRequest);
+        return statMapper.toStatDtoHitResponse(dbStatStorage.createStat(stat));
     }
 
     @Override
