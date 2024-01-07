@@ -9,8 +9,8 @@ services:
       - stat-service-db
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://stat-service-db:5432/stat-db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
 
   stat-service-db:
     image: postgres:16
@@ -38,7 +38,7 @@ services:
       - MAIN_PASSWORD=postgres
 
   ewm-db:
-    image: postgres:15
+    image: postgres:16
     container_name: postgres-main-db
     ports:
       - "6464:5432"
