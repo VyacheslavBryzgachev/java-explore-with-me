@@ -13,14 +13,16 @@ import ru.practicum.dto.StatDtoRequest;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class StatsClient extends BaseClient {
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Autowired
-    public StatsClient(@Value("${stats-service.url}") String serverUrl, RestTemplateBuilder builder) {
+    public StatsClient(@Value("${stat-server.url}") String serverUrl, RestTemplateBuilder builder) {
         super(
                 builder
                         .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl))
@@ -39,13 +41,13 @@ public class StatsClient extends BaseClient {
         }
         Map<String, Object> parameters;
         if (uris == null) {
-            parameters = Map.of("start", start,
-                    "end", end,
+            parameters = Map.of("start", start.format(formatter),
+                    "end", end.format(formatter),
                     "unique", unique);
             return get("/stats?start={start}&end={end}&unique={unique}", parameters);
         }
-        parameters = Map.of("start", start,
-                "end", end,
+        parameters = Map.of("start", start.format(formatter),
+                "end", end.format(formatter),
                 "uris", String.join(",", uris),
                 "unique", unique);
         return get("/stats?start={start}&end={end}&unique={unique}&uris={uris}", parameters);

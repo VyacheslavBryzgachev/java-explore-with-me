@@ -1,18 +1,16 @@
 package ru.practicum.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class StatDtoStatResponse {
     private String app;
     private String uri;
-    private long hits;
-
-    public StatDtoStatResponse(String app, String uri, long hits) {
-        this.app = app;
-        this.uri = uri;
-        this.hits = hits;
-    }
+    private Long hits;
 }

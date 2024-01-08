@@ -1,48 +1,52 @@
-version: '3.8'
+version: '3.1'
 services:
-  stat_server:
+  stat-server:
     build: ./ewm-stat-service/stat_server
-    container_name: stat_server
+    image: stat-service
+    container_name: server
     ports:
       - "9090:9090"
     depends_on:
-      - stat-service-db
+      - statdb
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://stat-service-db:5432/stat-db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://statdb:5432/statdb
+      - SPRING_DATASOURCE_USERNAME=ewm
+      - SPRING_DATASOURCE_PASSWORD=ewm
+      - JAVA_OPTS=-Djdk.httpclient.HttpClient.log=errors,requests
 
-  stat-service-db:
+  statdb:
     image: postgres:16
-    container_name: stat-server-db
-    ports:
-      - "6666:5432"
+    volumes:
+      - /var/lib/postgresql/data/
+    container_name: statdb
+
     environment:
-      - POSTGRES_DB=stat-db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=statdb
+      - POSTGRES_USER=ewm
+      - POSTGRES_PASSWORD=ewm
 
-
-  ewm-service:
+  main-service:
     build: ./ewm-main-service
-    image:
-      ewm-service:latest
-    container_name: ewm-service
+    image: main-service
+    container_name: main-service
     ports:
       - "8080:8080"
     depends_on:
-      - ewm-db
+      - ewmdb
+      - stat-server
     environment:
-      - MAIN_DB=jdbc:postgresql://postgres-main-db:5432/ewm_db
-      - MAIN_USER=postgres
-      - MAIN_PASSWORD=postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewmdb:5432/ewmdb
+      - SPRING_DATASOURCE_USERNAME=ewm
+      - SPRING_DATASOURCE_PASSWORD=ewm
+      - SERVICES_STATSSERVICE_URI=http://stat-server:9090
+    #   - JAVA_OPTS=-Djdk.httpclient.HttpClient.log=errors,requests
 
-  ewm-db:
-    image: postgres:16
-    container_name: postgres-main-db
-    ports:
-      - "6464:5432"
+  ewmdb:
+    image: postgres:14-alpine
+    volumes:
+      - /var/lib/postgresql/data/
+    container_name: ewmdb
     environment:
-      - POSTGRES_DB=ewm_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=ewmdb
+      - POSTGRES_USER=ewm
+      - POSTGRES_PASSWORD=ewm

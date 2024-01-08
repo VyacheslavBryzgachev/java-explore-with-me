@@ -3,6 +3,7 @@ package ru.practicum.event.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -59,9 +60,12 @@ public class EventsServiceImpl implements EventService {
     private final DbCategoryStorage dbCategoryStorage;
     private final DbUserStorage dbUserStorage;
     private final StatsClient statsClient;
+    private final ObjectMapper objectMapper;
     private final EventMapper eventMapper = new EventMapper();
     private final RequestMapper requestMapper = new RequestMapper();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${server.application.name:ewm-service}")
+    private String app;
 
 
     @Override
@@ -214,7 +218,7 @@ public class EventsServiceImpl implements EventService {
         EventFullDto eventFullDto = eventMapper.toEventFullDto(event);
         Map<Long, Long> viewStatsMap = getViewsAllEvents(List.of(event));
         Long views = viewStatsMap.getOrDefault(event.getId(), 0L);
-        eventFullDto.setViews(views);
+        eventFullDto.setViews(views + 1);
         return eventFullDto;
     }
 
@@ -362,7 +366,7 @@ public class EventsServiceImpl implements EventService {
         Map<Long, List<Request>> confirmedRequestsCountMap = getConfirmedRequestsCount(events.toList());
         for (EventFullDto event : result) {
             List<Request> requests = confirmedRequestsCountMap.getOrDefault(event.getId(), List.of());
-            event.setConfirmedRequests((long) requests.size());
+            event.setConfirmedRequests(requests.size());
         }
         return result;
     }
@@ -376,10 +380,10 @@ public class EventsServiceImpl implements EventService {
 
     private void addStatsClient(HttpServletRequest request) {
         statsClient.createStat(StatDtoRequest.builder()
-                .app("ewm-main-service")
+                .app(app)
                 .uri(request.getRequestURI())
                 .ip(request.getRemoteAddr())
-                .timestamp(String.valueOf(LocalDateTime.now()))
+                .timestamp(LocalDateTime.now())
                 .build());
     }
 
