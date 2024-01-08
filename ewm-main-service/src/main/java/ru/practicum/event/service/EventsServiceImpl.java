@@ -389,7 +389,7 @@ public class EventsServiceImpl implements EventService {
 
     private Map<Long, Long> getViewsAllEvents(List<Event> events) {
         List<String> uris = events.stream()
-                .map(event -> String.format("/events/%s", event.getId()))
+                .map(event -> "/events/" + event.getId())
                 .collect(Collectors.toList());
 
         List<LocalDateTime> startDates = events.stream()
