@@ -383,7 +383,7 @@ public class EventsServiceImpl implements EventService {
                 .app(app)
                 .uri(request.getRequestURI())
                 .ip(request.getRemoteAddr())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now().toString())
                 .build());
     }
 
