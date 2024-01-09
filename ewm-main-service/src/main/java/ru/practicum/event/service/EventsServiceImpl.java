@@ -1,20 +1,16 @@
 package ru.practicum.event.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.practicum.category.dao.DbCategoryStorage;
 import ru.practicum.category.model.Category;
 import ru.practicum.client.StatsClient;
 import ru.practicum.dto.StatDtoRequest;
-import ru.practicum.dto.StatDtoStatResponse;
 import ru.practicum.enums.State;
 import ru.practicum.enums.StateAction;
 import ru.practicum.enums.Status;
@@ -44,7 +40,6 @@ import ru.practicum.user.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,8 +54,7 @@ public class EventsServiceImpl implements EventService {
     private final DbLocationStorage dbLocationStorage;
     private final DbCategoryStorage dbCategoryStorage;
     private final DbUserStorage dbUserStorage;
-    private final StatsClient statsClient;
-    private final ObjectMapper objectMapper;
+    private final StatsClient statsClient = new StatsClient("http://ewm-stats-server:9090");
     private final EventMapper eventMapper = new EventMapper();
     private final RequestMapper requestMapper = new RequestMapper();
 
@@ -94,6 +88,7 @@ public class EventsServiceImpl implements EventService {
         event.setLocation(location);
         event.setCreatedOn(LocalDateTime.now());
         event.setState(State.PENDING);
+        event.setViews(0L);
         dbEventStorage.createEvent(event);
         return eventMapper.toEventFullDto(event);
     }
@@ -103,6 +98,8 @@ public class EventsServiceImpl implements EventService {
         Event event = dbEventStorage.getEvent(id, eventId).stream()
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Событие не найдено"));
+        event.setViews(event.getViews() + 1);
+        event = dbEventStorage.createEvent(event);
         return eventMapper.toEventFullDto(event);
     }
 
@@ -214,11 +211,18 @@ public class EventsServiceImpl implements EventService {
                 .findFirst()
                 .filter(event1 -> event1.getState().equals(State.PUBLISHED))
                 .orElseThrow(() -> new NotFoundException("Событие не найдено"));
-        addStatsClient(request);
+
+        StatDtoRequest statDtoRequest = StatDtoRequest.builder()
+                .app(app)
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        statsClient.createStat(statDtoRequest);
+
         EventFullDto eventFullDto = eventMapper.toEventFullDto(event);
-        Map<Long, Long> viewStatsMap = getViewsAllEvents(List.of(event));
-        Long views = viewStatsMap.getOrDefault(event.getId(), 0L);
-        eventFullDto.setViews(views + 1);
+        eventFullDto.setViews(statsClient.getView(eventFullDto.getId()).getBody());
         return eventFullDto;
     }
 
@@ -311,17 +315,19 @@ public class EventsServiceImpl implements EventService {
 
         List<Event> resultEvents = dbEventStorage.publicGetAllEvents(specification, pageable).getContent();
 
-        List<EventShortDto> result = resultEvents
-                .stream()
+        List<EventShortDto> eventShortDtos = resultEvents.stream()
                 .map(eventMapper::toEventShortDto)
                 .collect(Collectors.toList());
-        Map<Long, Long> viewStatsMap = getViewsAllEvents(resultEvents);
 
-        for (EventShortDto event : result) {
-            Long viewsFromMap = viewStatsMap.getOrDefault(event.getId(), 0L);
-            event.setViews(viewsFromMap);
-        }
-        return result;
+        StatDtoRequest statDtoRequest = StatDtoRequest.builder()
+                .app(app)
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        statsClient.createStat(statDtoRequest);
+        return eventShortDtos;
     }
 
     @Override
@@ -371,50 +377,10 @@ public class EventsServiceImpl implements EventService {
         return result;
     }
 
-
     private Map<Long, List<Request>> getConfirmedRequestsCount(List<Event> events) {
         List<Request> requests = dbRequestStorage.getConfirmedRequestsByEventIds(events
                 .stream().map(Event::getId).collect(Collectors.toList()));
         return requests.stream().collect(Collectors.groupingBy(r -> r.getEvent().getId()));
-    }
-
-    private void addStatsClient(HttpServletRequest request) {
-        statsClient.createStat(StatDtoRequest.builder()
-                .app(app)
-                .uri(request.getRequestURI())
-                .ip(request.getRemoteAddr())
-                .timestamp(LocalDateTime.now().toString())
-                .build());
-    }
-
-    private Map<Long, Long> getViewsAllEvents(List<Event> events) {
-        List<String> uris = events.stream()
-                .map(event -> "/events/" + event.getId())
-                .collect(Collectors.toList());
-
-        List<LocalDateTime> startDates = events.stream()
-                .map(Event::getCreatedOn)
-                .collect(Collectors.toList());
-        LocalDateTime earliestDate = startDates.stream()
-                .min(LocalDateTime::compareTo)
-                .orElse(null);
-        Map<Long, Long> viewStatsMap = new HashMap<>();
-
-        if (earliestDate != null) {
-            ResponseEntity<Object> response = statsClient.getStats(earliestDate, LocalDateTime.now(),
-                    uris, true);
-
-            List<StatDtoStatResponse> statDtoStatResponses = objectMapper.convertValue(response.getBody(), new TypeReference<>() {
-            });
-
-            viewStatsMap = statDtoStatResponses.stream()
-                    .filter(statsDto -> statsDto.getUri().startsWith("/events/"))
-                    .collect(Collectors.toMap(
-                            statsDto -> Long.parseLong(statsDto.getUri().substring("/events/".length())),
-                            StatDtoStatResponse::getHits
-                    ));
-        }
-        return viewStatsMap;
     }
 }
 

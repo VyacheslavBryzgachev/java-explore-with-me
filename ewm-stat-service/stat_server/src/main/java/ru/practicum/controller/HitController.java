@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.dto.StatDtoHitResponse;
 import ru.practicum.dto.StatDtoRequest;
 import ru.practicum.service.StatService;
 
@@ -23,7 +22,7 @@ public class HitController {
 
     @PostMapping
     @ResponseStatus(code = HttpStatus.CREATED)
-    public StatDtoHitResponse createHit(@Valid @RequestBody StatDtoRequest statsDto) {
-        return statService.create(statsDto);
+    public void createHit(@Valid @RequestBody StatDtoRequest statsDto) {
+        statService.create(statsDto);
     }
 }

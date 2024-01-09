@@ -1,9 +1,9 @@
-version: '3.1'
+version: '3.8'
 services:
-  stat-server:
+  stats-server:
     build: ./ewm-stat-service/stat_server
-    image: stat-service
-    container_name: server
+    image: ewm-stats-server
+    container_name: "ewm-stats-server"
     ports:
       - "9090:9090"
     depends_on:
@@ -12,7 +12,6 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://statdb:5432/statdb
       - SPRING_DATASOURCE_USERNAME=ewm
       - SPRING_DATASOURCE_PASSWORD=ewm
-      - JAVA_OPTS=-Djdk.httpclient.HttpClient.log=errors,requests
 
   statdb:
     image: postgres:16
@@ -27,19 +26,17 @@ services:
 
   main-service:
     build: ./ewm-main-service
-    image: main-service
-    container_name: main-service
+    image: ewm-main-service
+    container_name: "ewm-main-service"
     ports:
       - "8080:8080"
     depends_on:
       - ewmdb
-      - stat-server
+      - stats-server
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ewmdb:5432/ewmdb
       - SPRING_DATASOURCE_USERNAME=ewm
       - SPRING_DATASOURCE_PASSWORD=ewm
-      - SERVICES_STATSSERVICE_URI=http://stat-server:9090
-    #   - JAVA_OPTS=-Djdk.httpclient.HttpClient.log=errors,requests
 
   ewmdb:
     image: postgres:14-alpine

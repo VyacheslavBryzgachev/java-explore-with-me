@@ -12,19 +12,21 @@ import java.util.List;
 
 @Repository
 public interface StatRepository extends JpaRepository<Stat, Long> {
-@Query("SELECT new ru.practicum.dto.StatDtoStatResponse(stat.app, stat.uri, COUNT(stat.ip)) " +
-        "FROM Stat AS stat " +
-        "WHERE stat.timestamp BETWEEN :start AND :end and stat.uri in (:uris) " +
-        "GROUP BY stat.ip, stat.uri, stat.app " +
-        "ORDER BY COUNT(stat.ip) DESC ")
-    List<StatDtoStatResponse> getStatByUniqueFalseWithUri(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, @Param("uris") List<String> uris);
+    @Query("SELECT new ru.practicum.dto.StatDtoStatResponse(stat.app, stat.uri, COUNT(stat.ip)) " +
+            "FROM Stat AS stat " +
+            "WHERE stat.timestamp BETWEEN :start AND :end and stat.uri in (:uris) " +
+            "GROUP BY stat.ip, stat.uri, stat.app " +
+            "ORDER BY COUNT(stat.ip) DESC ")
+    List<StatDtoStatResponse> getStatByUniqueFalseWithUri(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
+                                                          @Param("uris") List<String> uris);
 
     @Query(value = "SELECT new ru.practicum.dto.StatDtoStatResponse(stat.app, stat.uri, COUNT(distinct stat.ip)) " +
             "FROM Stat AS stat " +
             "WHERE stat.timestamp BETWEEN :start AND :end and stat.uri in (:uris) " +
             "GROUP BY stat.ip, stat.uri, stat.app " +
             "ORDER BY COUNT(stat.ip) DESC ")
-    List<StatDtoStatResponse> getStatByUniqueTrueWithUri(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, @Param("uris") List<String> uris);
+    List<StatDtoStatResponse> getStatByUniqueTrueWithUri(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
+                                                         @Param("uris") List<String> uris);
 
     @Query("SELECT new ru.practicum.dto.StatDtoStatResponse(stat.app, stat.uri, COUNT(stat.ip)) " +
             "FROM Stat AS stat " +
@@ -39,4 +41,10 @@ public interface StatRepository extends JpaRepository<Stat, Long> {
             "GROUP BY stat.ip, stat.uri, stat.app " +
             "ORDER BY COUNT(stat.ip) DESC ")
     List<StatDtoStatResponse> getStatByUniqueTrue(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query(value =
+            "SELECT COUNT(DISTINCT s.ip) " +
+                    "FROM Stat AS s " +
+                    "WHERE s.uri = :uri")
+    Long countDistinctByUri(@Param("uri") String s);
 }

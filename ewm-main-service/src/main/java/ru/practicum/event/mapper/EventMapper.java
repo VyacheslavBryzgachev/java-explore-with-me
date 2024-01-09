@@ -64,6 +64,7 @@ public class EventMapper {
                         .id(event.getCategory().getId())
                         .name(event.getCategory().getName())
                         .build())
+                .views(event.getViews())
                 .build();
     }
 }

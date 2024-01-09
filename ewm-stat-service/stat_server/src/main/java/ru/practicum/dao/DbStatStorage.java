@@ -15,11 +15,11 @@ public class DbStatStorage {
 
     private final StatRepository statRepository;
 
-    public Stat createStat(Stat stat) {
-        return statRepository.save(stat);
+    public void createStat(Stat stat) {
+        statRepository.save(stat);
     }
 
-    public List<StatDtoStatResponse> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+    public List<StatDtoStatResponse> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
         if (uris == null) {
             if (unique) {
                 return statRepository.getStatByUniqueTrue(start, end);
@@ -33,5 +33,9 @@ public class DbStatStorage {
                 return statRepository.getStatByUniqueFalseWithUri(start, end, uris);
             }
         }
+    }
+
+    public Long countDistinctByUri(String s) {
+        return statRepository.countDistinctByUri(s);
     }
 }
